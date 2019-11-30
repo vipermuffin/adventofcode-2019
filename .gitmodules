@@ -1,0 +1,9 @@
+[submodule "lib"]
+	path = lib
+	url = https://github.com/vipermuffin/adventofcode-lib.git
+[submodule "Tools"]
+	path = Tools
+	url = https://github.com/vipermuffin/adventofcode-tools.git
+[submodule "Templates"]
+	path = Templates
+	url = https://github.com/vipermuffin/adventofcode-cmake-templates

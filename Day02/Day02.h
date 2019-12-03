@@ -12,5 +12,6 @@
 
 namespace AocDay02 {
 //Function Definitions
+    void runProgram(std::vector<int>& intops);
 
 }

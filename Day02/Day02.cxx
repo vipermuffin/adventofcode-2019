@@ -11,112 +11,84 @@
 #include "AoCUtils.h"
 //Common Libraries
 #include <algorithm> //std::sort, find, for_each, max_element, etc
-//#include <array>
 #include <climits>   //INT_MIN, INT_MAX, etc.
-//#include <chrono>
-//#include <iostream>
-//#include <fstream> //ifstream
-//#include <functional> //std::function
-//#include <iomanip> //setfill setw hex
-//#include <map>
-//#include <math.h> //sqrt
-//#include <numeric> //std::accumulate
-//#include <queue>
-//#include <regex>
-//#include <set>
-#include <sstream>
-//#include <thread>
-//#include <tuple>
-//#include <unordered_map>
-//#include <unordered_set>
+
 
 
 using namespace std;
 namespace AocDay02 {
 
-    std::vector<int> parseCsvLineForNum(const std::string& line)
-    {
-        vector<int> words{};
-        stringstream ss{line};
-        string word;
-        while(getline(ss,word,',')) {
-            words.push_back(stoi(word));
-        }
-        return words;
-    }
-    
 	static const std::string InputFileName = "Day02.txt";
 	std::string solvea() {
         auto inputF = parseFileForLines(InputFileName);
         auto input = parseCsvLineForNum(inputF[0]);
-        input[1] = 60;
-        input[2] = 0;
-        auto itr = input.begin();
-        while(itr <= input.end() && *itr != 99) {
-            switch(*itr) {
-                case 1:
-                    input[*(itr+3)] = input[*(itr+1)]+input[*(itr+2)];
-                    break;
-                    
-                case 2:
-                    input[*(itr+3)] = input[*(itr+1)]*input[*(itr+2)];
-                    break;
-                    
-                default:
-                    cout << "ERROR: Op code Undefinded: " << *itr << endl;
-                    break;
-            }
-            itr +=4;
-        }
+        input[1] = 12;
+        input[2] = 2;
+        
+        runProgram(input);
+        
 		return to_string(input[0]);
 	}
 
 	std::string solveb() {
         auto inputF = parseFileForLines(InputFileName);
-        bool nounFound = false;
-        bool done = false;
-        int noun{0},verb{0};
+        constexpr int MAGIC_OUTPUT = 19690720;
+        constexpr int RANGE = 100;
+        auto initOps = parseCsvLineForNum(inputF[0]);
         
-        while(!done) {
-            auto input = parseCsvLineForNum(inputF[0]);
-            input[1] = noun;
-            input[2] = verb;
-            auto itr = input.begin();
-            while(itr <= input.end() && *itr != 99) {
-                switch(*itr) {
-                    case 1:
-                        input[*(itr+3)] = input[*(itr+1)]+input[*(itr+2)];
-                        break;
-                        
-                    case 2:
-                        input[*(itr+3)] = input[*(itr+1)]*input[*(itr+2)];
-                        break;
-                        
-                    default:
-                        cout << "ERROR: Op code Undefinded: " << *itr << endl;
-                        break;
-                }
-                itr +=4;
+        //Instead of iterating through all search a little smarter
+        // - Start with course adjustments, then fine adjustments
+        //Determine which gives bigger jumps
+        auto i1{initOps};
+        i1[1] = 1;
+        i1[2] = 0;
+        runProgram(i1);
+        auto i2{initOps};
+        i2[1] = 0;
+        i2[2] = 1;
+        
+        bool nounBigger = i1[0] > i2[0];
+        
+        //Find combo that generates magical output
+        int noun{0},verb{0};
+        int x{0},y{0},z{0};
+        bool found{false};
+        while(z!= MAGIC_OUTPUT && x < RANGE && y < RANGE) {
+            if(!found && z > MAGIC_OUTPUT) {
+                //value that goes past magic output found, go back below and search slower
+                found = true;
+                x--;
             }
-            
-            done = input[0] == 19690720;
-            if(!done) {
-                //noun has bigger jumps, search first
-                if(nounFound) {
-                    verb++;
-                } else {
-                    if(input[0] > 19690720) {
-                        noun--;
-                        nounFound = true;
-                        verb++;
-                    } else {
-                        noun++;
-                    }
-                }
-            }
+            found ? y++ : x++;
+            auto input{initOps};
+            input[1] = nounBigger ? x : y;
+            input[2] = nounBigger ? y : x;
+            runProgram(input);
+            z = input[0];
         }
+        noun = nounBigger ? x : y;
+        verb = nounBigger ? y : x;
 
         return to_string(noun*100+verb);
 	}
 
+    void runProgram(std::vector<int>& intops) {
+        auto itr = intops.begin();
+        while(itr <= intops.end() && *itr != 99) {
+            switch(*itr) {
+                case 1:
+                    intops[*(itr+3)] = intops[*(itr+1)]+intops[*(itr+2)];
+                    break;
+                    
+                case 2:
+                    intops[*(itr+3)] = intops[*(itr+1)]*intops[*(itr+2)];
+                    break;
+                    
+                default:
+                    cerr << "ERROR: Op code Undefinded: " << *itr << endl;
+                    break;
+            }
+            itr +=4;
+        }
+    }
 }

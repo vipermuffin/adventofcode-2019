@@ -12,7 +12,6 @@
 //Common Libraries
 #include <algorithm> //std::sort, find, for_each, max_element, etc
 #include <climits>   //INT_MIN, INT_MAX, etc.
-#include <sstream>
 #include <unordered_map>
 
 using namespace std;
@@ -38,19 +37,17 @@ namespace AocDay03 {
         
 		return to_string(findBestIntersections(input[0], input[1]));
 	}
-
-    std::string pairToString(int x, int y) {
-        stringstream ss{};
-        ss << x << "x" << y;
-        return ss.str();
-    }
     
     std::vector<std::pair<int,int>> findIntersections(const std::string& wire1, const std::string& wire2) {
-        
+        constexpr int X = 0;
+        constexpr int Y = 1;
+        union {
+            int all;
+            int16_t  xy[2];
+        } tmp;
         vector<pair<int,int>> pairs;
-        unordered_map<string, int> m;
-        int x{0},y{0};
-        m[pairToString(x,y)]++;
+        vector<int> crs{};
+        int16_t x{0},y{0};
         auto input = parseCsvLineForWords(wire1);
         auto itr = input.begin();
         while(itr != input.end()) {
@@ -66,10 +63,15 @@ namespace AocDay03 {
                 } else if((*itr)[0] == 'D') {
                     y--;
                 }
-                m[pairToString(x,y)]++;
+                tmp.xy[X] = x;
+                tmp.xy[Y] = y;
+                crs.emplace_back(tmp.all);
             }
             itr++;
         }
+        
+        //Sort to take advantage of binary search
+        std::sort(crs.begin(), crs.end());
         x=0;
         y=0;
         input = parseCsvLineForWords(wire2);
@@ -87,7 +89,9 @@ namespace AocDay03 {
                 } else if((*itr)[0] == 'D') {
                     y--;
                 }
-                if(m[pairToString(x,y)] > 0) {
+                tmp.xy[X] = x;
+                tmp.xy[Y] = y;
+                if(binary_search(crs.begin(), crs.end(), tmp.all)) {
                     pairs.emplace_back(x,y);
                 }
             }
@@ -96,13 +100,22 @@ namespace AocDay03 {
         
         return pairs;
     }
-    
+
     int findBestIntersections(const std::string& wire1, const std::string& wire2) {
+        //Union to store x,y values together and steps + bool
+        constexpr int X = 0;
+        constexpr int Y = 1;
+        union {
+            int all;
+            int16_t  xy[2];
+        } tmp,tmp2;
         
-        vector<pair<int,int>> pairs;
-        unordered_map<string, int> m;
-        int x{0},y{0};
-        m[pairToString(x,y)]++;
+        unordered_map<int, int> m;
+        int16_t x{0},y{0};
+        int16_t count = 0;
+        tmp2.xy[Y] = 1;
+        
+        //Map out first wire locations and number of steps
         auto input = parseCsvLineForWords(wire1);
         auto itr = input.begin();
         while(itr != input.end()) {
@@ -118,13 +131,23 @@ namespace AocDay03 {
                 } else if((*itr)[0] == 'D') {
                     y--;
                 }
-                m[pairToString(x,y)] = 1;
+                count++;
+                tmp.xy[X] = x;
+                tmp.xy[Y] = y;
+                tmp2.xy[X] = count;
+                if(m[tmp.all] == 0) {
+                    //Store steps for this location if first time here
+                     m[tmp.all] = tmp2.all;
+                }
             }
             itr++;
         }
+        
+        //Map out second wire and compare if it overlaps
         x=0;
         y=0;
-        int count = 0;
+        count = 0;
+        std::vector<int> crosses;
         input = parseCsvLineForWords(wire2);
         itr = input.begin();
         while(itr != input.end()) {
@@ -141,42 +164,22 @@ namespace AocDay03 {
                     y--;
                 }
                 count++;
-                if(m[pairToString(x,y)] == 1) {
-                    m[pairToString(x,y)] = count;
-                    pairs.emplace_back(x,y);
+                tmp.xy[X] = x;
+                tmp.xy[Y] = y;
+                tmp2.all = m[tmp.all];
+                if(tmp2.xy[Y] == 1) {
+                    //Wire overlaps, add to cross vector
+                    crosses.emplace_back(count+tmp2.xy[X]);
+                    tmp2.xy[Y]++;
+                    m[tmp.all] = tmp2.all;
                 }
             }
             itr++;
         }
-        
-        x=0;
-        y=0;
-        count =0;
-        std::vector<int> crosses;
-        input = parseCsvLineForWords(wire1);
-        itr = input.begin();
-        while(itr != input.end()) {
-            string num{itr->begin()+1,itr->end()};
-            int steps = stoi(num);
-            for(int i = 0; i < steps;i++) {
-                if((*itr)[0] == 'R') {
-                    x++;
-                } else if((*itr)[0] == 'L') {
-                    x--;
-                } else if((*itr)[0] == 'U') {
-                    y++;
-                } else if((*itr)[0] == 'D') {
-                    y--;
-                }
-                count++;
-                if(m[pairToString(x,y)] != 1) {
-                    crosses.emplace_back(count+m[pairToString(x,y)]);
-                    pairs.emplace_back(x,y);
-                }
-            }
-            itr++;
-        }
+
+        //Sort to get the min to the top
         std::sort(crosses.begin(),crosses.end());
         return crosses[0];
     }
+
 }

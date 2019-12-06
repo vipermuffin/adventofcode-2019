@@ -11,24 +11,9 @@
 #include "AoCUtils.h"
 //Common Libraries
 #include <algorithm> //std::sort, find, for_each, max_element, etc
-//#include <array>
 #include <climits>   //INT_MIN, INT_MAX, etc.
-//#include <chrono>
-//#include <iostream>
-//#include <fstream> //ifstream
-//#include <functional> //std::function
-//#include <iomanip> //setfill setw hex
-//#include <map>
-//#include <math.h> //sqrt
-//#include <numeric> //std::accumulate
-//#include <queue>
-//#include <regex>
-//#include <set>
-//#include <sstream>
-//#include <thread>
-//#include <tuple>
-//#include <unordered_map>
-//#include <unordered_set>
+#include <sstream>
+
 
 
 using namespace std;
@@ -38,23 +23,39 @@ namespace AocDay05 {
 	std::string solvea() {
         auto inputF = parseFileForLines(InputFileName);
         auto input = parseCsvLineForNum(inputF[0]);
-        
-        runProgram(input);
+        vector<int> args{1};
+        string outStr{"---"};
+        runProgram(input,args,outStr);
 
-		return "---";
+		return outStr;
 	}
 
 	std::string solveb() {
         auto inputF = parseFileForLines(InputFileName);
-//        vector<string> inputF = {"3,21,1008,21,8,20,1005,20,22,107,8,21,20,1006,20,31,        1106,0,36,98,0,0,1002,21,125,20,4,20,1105,1,46,104,        999,1105,1,46,1101,1000,1,20,4,20,1105,1,46,98,99"};
         auto input = parseCsvLineForNum(inputF[0]);
+        vector<int> args{5};
+        string outStr{"---"};
+        runProgram(input,args,outStr);
         
-        runProgram(input);
-		return "---";
+		return outStr;
 	}
     
-    void runProgram(std::vector<int>& intops) {
+    void runProgram(std::vector<int>& intops,const std::vector<int>& stdIn, std::string& stdOut) {
+        stringstream ss{};
+        auto inItr = stdIn.begin();
         auto itr = intops.begin();
+        vector<std::function<int(int*,int*,int*)>> ops = {
+            [&itr](int*,int*,int*){cerr << "ERROR: Op code Undefinded: " << *itr << endl;return 4;},
+            [](int*p1,int*p2,int*p3){*p3=*p1+*p2;return 4;},
+            [](int*p1,int*p2,int*p3){*p3=*p1**p2;return 4;},
+            [&inItr,&stdIn](int*p1,int*,int*){*p1=inItr != stdIn.end() ? *inItr++ : 0;return 2;},
+            [&ss](int*p1,int*,int*){ss << *p1;return 2;},
+            [&intops,&itr](int*p1,int*p2,int*){return (*p1 != 0 ? (intops.begin()+*p2)-itr : 3);},
+            [&intops,&itr](int*p1,int*p2,int*){return (*p1 == 0 ? (intops.begin()+*p2)-itr : 3);},
+            [](int*p1,int*p2,int*p3){(*p1 < *p2) ? *p3=1 : *p3 = 0;return 4;},
+            [](int*p1,int*p2,int*p3){(*p1 == *p2) ? *p3=1 : *p3 = 0;return 4;},
+        };
+        
         while(itr <= intops.end() && *itr != 99) {
             int code = *itr %100;
             int pMode[3];
@@ -62,73 +63,15 @@ namespace AocDay05 {
             pMode[1] = (*itr /1000) % 10;
             pMode[2] = (*itr /10000);
             int vals[] = {*(itr+1),*(itr+2)};
-            int* params[2];
+            int* params[3];
             params[0] = pMode[0] ? &vals[0] : &intops[*(itr+1)];
             params[1] = pMode[1] ? &vals[1] : &intops[*(itr+2)];
-            
-            switch(code) {
-                case 1:
-                    intops[*(itr+3)] = *params[0]+*params[1];
-                    itr +=4;
-                    break;
-                    
-                case 2:
-                    intops[*(itr+3)] = *params[0]**params[1];
-                    itr +=4;
-                    break;
-                    
-                case 3:
-                    int inVal;
-                    cin >> inVal;
-                    intops[*(itr+1)] = inVal;
-                    itr += 2;
-                    break;
-                    
-                case 4:
-                    cout << *params[0];
-                    itr += 2;
-                    break;
-                    
-                case 5:
-                    if(*params[0] != 0) {
-                        itr = intops.begin()+*params[1];
-                    } else {
-                        itr += 3;
-                    }
-                    break;
-                    
-                case 6:
-                    if(*params[0] == 0) {
-                        itr = intops.begin()+*params[1];
-                    } else {
-                        itr += 3;
-                    }
-                    break;
-                    
-                case 7:
-                    if(*params[0] < *params[1]) {
-                        intops[*(itr+3)] = 1;
-                    } else {
-                        intops[*(itr+3)] = 0;
-                    }
-                    itr +=4;
-                    break;
-                    
-                case 8:
-                    if(*params[0] == *params[1]) {
-                        intops[*(itr+3)] = 1;
-                    } else {
-                        intops[*(itr+3)] = 0;
-                    }
-                    itr +=4;
-                    break;
-                    
-                default:
-                    cerr << "ERROR: Op code Undefinded: " << *itr << endl;
-                    itr +=4;
-                    break;
+            params[2] = &intops[*(itr+3)];
+            if(code < 0 || code >= ops.size()) {
+                code = 0;
             }
+            itr += ops[code](params[0],params[1],params[2]);
         }
+        stdOut = ss.str();
     }
-
 }

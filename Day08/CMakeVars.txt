@@ -1,0 +1,3 @@
+set (DAY 8)
+set (DAY_PREFIX "Day08")
+set (YEAR "2019")

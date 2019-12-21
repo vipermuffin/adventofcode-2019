@@ -149,7 +149,7 @@ TEST(Y2019_Day14Example,Test6b) {
         low++;
         actual = findIngredients(base, start, x, low);
     }
-    EXPECT_LT(num,LONG_MAX);
+
     EXPECT_EQ(82892753,--low);
 }
 

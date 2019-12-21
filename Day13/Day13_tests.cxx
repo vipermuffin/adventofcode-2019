@@ -9,6 +9,7 @@
 
 #include "Day13.h"
 #include "gtest/gtest.h"
+#include <functional>
 #include <iostream>
 #include <string>
 

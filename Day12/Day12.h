@@ -24,10 +24,16 @@ namespace AocDay12 {
         int potentialEnergy() const;
         int kineticEnergy() const;
         std::string position() const;
+        bool xEquals(const Moon& rhs) const;
+        bool yEquals(const Moon& rhs) const;
+        bool zEquals(const Moon& rhs) const;
         
     private:
         AocUtils::LinearTraveler<int> x;
         AocUtils::LinearTraveler<int> y;
         AocUtils::LinearTraveler<int> z;
     };
+    
+    int64_t simulateOneMoonDimension(const std::vector<AocUtils::LinearTraveler<int>>& moons);
+    int64_t simulateMoons(const std::vector<Moon>& moons);
 }
